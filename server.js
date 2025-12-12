@@ -7,40 +7,51 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-
-// Static files (HTML, CSS, JS, favicon)
-app.use(express.static(path.join(__dirname, "public")));
-
 app.use(express.json());
 
-// Replicate client
+// Static files (HTML, CSS, JS)
+app.use(express.static(path.join(__dirname, "public")));
+
+// Replicate client (ein API-Key reicht jetzt)
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN
 });
 
-// API endpoint
+// ✅ Stable Video Diffusion Endpoint
 app.post("/api/generate", async (req, res) => {
   try {
     const prompt = req.body.prompt;
 
-    const output = await replicate.run("minimax/video-01", {
-      input: { prompt }
-    });
+    const output = await replicate.run(
+      "stability-ai/stable-video-diffusion",
+      {
+        input: {
+          prompt,
+          motion_bucket_id: 127,
+          fps: 24,
+          num_frames: 25
+        }
+      }
+    );
 
-    res.json({ url: output.url() });
+    if (!output || !output[0] || !output[0].url) {
+      return res.status(500).json({ error: "Keine Video-URL erhalten." });
+    }
+
+    res.json({ url: output[0].url });
   } catch (err) {
     console.error("Generation error:", err);
-    res.status(500).json({ error: "Video generation failed" });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Fallback: send index.html for all unknown routes
+// Fallback: index.html für alle Routen
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Start server
+// Server starten
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`✅ Server läuft auf Port ${PORT}`);
 });
