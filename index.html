@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>Video Generator</h1>
+
+  <input id="prompt" placeholder="Prompt eingeben">
+  <button onclick="generate()">Generate</button>
+
+  <video id="video" controls style="display:none; width:400px;"></video>
+
+  <script>
+    async function generate() {
+      const prompt = document.getElementById("prompt").value;
+
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt })
+      });
+
+      const data = await res.json();
+      const video = document.getElementById("video");
+      video.src = data.url;
+      video.style.display = "block";
+    }
+  </script>
+</body>
+</html>
